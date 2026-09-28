@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Interactive 3D Solar System</title>
+<link rel="stylesheet" href="css/styles.css">
+
+<style>
+#currentPlanet{
+  font-size:20px;
+  font-weight:bold;
+  text-transform:uppercase;
+  color:white;
+  margin:0 8px;
+}
+
+#controls label{
+  font-size:12px;
+  line-height:1.2;
+}
+
+.set-view span,
+.set-zoom span{
+  display:none;
+}
+
+/* POPUP */
+#planetOptions{
+  position:fixed;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  background:#111;
+  color:white;
+  padding:16px;
+  border-radius:10px;
+  display:none;
+  z-index:9999;
+  text-align:center;
+}
+#planetOptions.show{display:block;}
+#planetOptions button{
+  margin:6px;
+  padding:6px 14px;
+}
+
+/* ── PLANET LABEL (matches image style) ── */
+.planet-label {
+  position: absolute;
+  left: 120%;
+  top: -10px;
+  pointer-events: none;
+  opacity: 0;
+  white-space: nowrap;
+  z-index: 99999;
+  transition: opacity 0.3s ease;
+}
+
+/* show label only for active planet */
+#solar-system.sun     #sun      .planet-label,
+#solar-system.mercury #mercury  .planet-label,
+#solar-system.venus   #venus    .planet-label,
+#solar-system.earth   #earth    .planet-label,
+#solar-system.mars    #mars     .planet-label,
+#solar-system.jupiter #jupiter  .planet-label,
+#solar-system.saturn  #saturn   .planet-label,
+#solar-system.uranus  #uranus   .planet-label,
+#solar-system.neptune #neptune  .planet-label {
+  opacity: 1;
+}
+
+.planet-label .lbl-name {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+  margin-bottom: 3px;
+  text-shadow: 0 0 10px rgba(0,0,0,1), 0 0 20px rgba(0,0,0,1), 2px 2px 4px rgba(0,0,0,1);
+}
+
+.planet-label .lbl-value {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1.1;
+  text-shadow: 0 0 10px rgba(0,0,0,1), 0 0 25px rgba(0,0,0,1), 2px 2px 6px rgba(0,0,0,1);
+}
+
+.planet-label .lbl-sub {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.95);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 2px;
+  text-shadow: 0 0 8px rgba(0,0,0,1), 2px 2px 4px rgba(0,0,0,1);
+}
+
+/* connector line */
+.planet-label::before {
+  content: '';
+  position: absolute;
+  left: -18px;
+  top: 50%;
+  width: 14px;
+  height: 1px;
+  background: rgba(255,255,255,0.9);
+  box-shadow: 0 0 6px rgba(255,255,255,0.8);
+}
+
+/* which rows to show per mode — default show speed */
+.planet-label .row-speed { display: block; }
+.planet-label .row-size  { display: none;  }
+.planet-label .row-dist  { display: none;  }
+
+#universe.set-size     .planet-label .row-speed { display: none;  }
+#universe.set-size     .planet-label .row-size  { display: block; }
+#universe.set-size     .planet-label .row-dist  { display: none;  }
+
+#universe.set-distance .planet-label .row-speed { display: none;  }
+#universe.set-distance .planet-label .row-size  { display: none;  }
+#universe.set-distance .planet-label .row-dist  { display: block; }
+</style>
+</head>
+
+<body class="opening view-2D zoom-large data-open controls-open">
+
+<div id="navbar">
+  <a id="toggle-data" href="#data">Data</a>
+  <h1>Interactive 3D Solar System</h1>
+  <a id="toggle-controls" href="#controls">Controls</a>
+</div>
+
+<!-- BOTTOM PLANET LINKS -->
+<div id="data">
+  <a href="#" onclick="openPlanet('sun');return false;">Sun</a>
+  <a href="#" onclick="openPlanet('mercury');return false;">Mercury</a>
+  <a href="#" onclick="openPlanet('venus');return false;">Venus</a>
+  <a href="#" onclick="openPlanet('earth');return false;">Earth</a>
+  <a href="#" onclick="openPlanet('mars');return false;">Mars</a>
+  <a href="#" onclick="openPlanet('jupiter');return false;">Jupiter</a>
+  <a href="#" onclick="openPlanet('saturn');return false;">Saturn</a>
+  <a href="#" onclick="openPlanet('uranus');return false;">Uranus</a>
+  <a href="#" onclick="openPlanet('neptune');return false;">Neptune</a>
+</div>
+
+<!-- CONTROLS — existing buttons unchanged -->
+<div id="controls">
+  <div id="planetSlider">
+    <button id="prevPlanet">◀</button>
+    <span id="currentPlanet">EARTH</span>
+    <button id="nextPlanet">▶</button>
+  </div>
+
+  <label class="set-view"><input type="checkbox"></label>
+  <label class="set-zoom"><input type="checkbox"></label>
+
+  <label><input type="radio" class="set-speed" name="scale" checked><span>Speed</span></label>
+  <label><input type="radio" class="set-size"  name="scale"><span>Size</span></label>
+  <label><input type="radio" class="set-distance" name="scale"><span>Distance</span></label>
+</div>
+
+<!-- POPUP -->
+<div id="planetOptions">
+  <h2 id="optionTitle">PLANET</h2>
+  <button type="button" onclick="showPlanetInfo()">View Info</button>
+  <button type="button" onclick="goToVideo()">Watch Video</button>
+  <br><br>
+  <button type="button" onclick="closeOptions()">Close</button>
+</div>
+
+<div id="universe" class="scale-stretched">
+<div id="galaxy">
+<div id="solar-system" class="earth">
+
+  <!-- MERCURY -->
+  <div id="mercury" class="orbit"><div class="pos"><div class="planet">
+    <div class="planet-label">
+      <div class="lbl-name">Mercury</div>
+      <div class="row-speed">
+        <div class="lbl-value">170,503 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">15,329 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">57,909,227 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- VENUS -->
+  <div id="venus" class="orbit"><div class="pos"><div class="planet">
+    <div class="planet-label">
+      <div class="lbl-name">Venus</div>
+      <div class="row-speed">
+        <div class="lbl-value">126,074 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">38,024 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">108,209,475 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- EARTH -->
+  <div id="earth" class="orbit"><div class="pos"><div class="planet">
+    <div class="planet-label">
+      <div class="lbl-name">Earth</div>
+      <div class="row-speed">
+        <div class="lbl-value">107,218 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">40,030 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">149,598,262 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- MARS -->
+  <div id="mars" class="orbit"><div class="pos"><div class="planet">
+    <div class="planet-label">
+      <div class="lbl-name">Mars</div>
+      <div class="row-speed">
+        <div class="lbl-value">86,677 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">21,296 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">227,943,824 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- JUPITER -->
+  <div id="jupiter" class="orbit"><div class="pos"><div class="planet">
+    <div class="planet-label">
+      <div class="lbl-name">Jupiter</div>
+      <div class="row-speed">
+        <div class="lbl-value">47,002 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">439,263 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">778,340,821 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- SATURN -->
+  <div id="saturn" class="orbit"><div class="pos"><div class="planet">
+    <div class="ring"></div>
+    <div class="planet-label">
+      <div class="lbl-name">Saturn</div>
+      <div class="row-speed">
+        <div class="lbl-value">34,701 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">365,882 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">1,426,666,422 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- URANUS -->
+  <div id="uranus" class="orbit"><div class="pos"><div class="planet">
+    <div class="planet-label">
+      <div class="lbl-name">Uranus</div>
+      <div class="row-speed">
+        <div class="lbl-value">24,477 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">159,354 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">2,870,658,186 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- NEPTUNE -->
+  <div id="neptune" class="orbit"><div class="pos"><div class="planet">
+    <div class="planet-label">
+      <div class="lbl-name">Neptune</div>
+      <div class="row-speed">
+        <div class="lbl-value">19,566 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">154,704 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">4,498,396,441 km</div>
+        <div class="lbl-sub">From Sun</div>
+      </div>
+    </div>
+  </div></div></div>
+
+  <!-- SUN -->
+  <div id="sun">
+    <div class="planet-label">
+      <div class="lbl-name">Sun</div>
+      <div class="row-speed">
+        <div class="lbl-value">0 km/h</div>
+        <div class="lbl-sub">Orbit Velocity</div>
+      </div>
+      <div class="row-size">
+        <div class="lbl-value">4,370,005 km</div>
+        <div class="lbl-sub">Equatorial Circumference</div>
+      </div>
+      <div class="row-dist">
+        <div class="lbl-value">149,598,262 km</div>
+        <div class="lbl-sub">From Earth</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<script src="js/jquery.min.js"></script>
+<script src="js/prefixfree.min.js"></script>
+<script src="js/scripts.min.js"></script>
+
+<script>
+const planets = ["sun","mercury","venus","earth","mars","jupiter","saturn","uranus","neptune"];
+let currentIndex = 3;
+let selectedPlanet = "earth";
+
+const currentPlanetSpan = document.getElementById("currentPlanet");
+const solarSystem = document.getElementById("solar-system");
+
+function updatePlanet(){
+  let planet = planets[currentIndex];
+  selectedPlanet = planet;
+  currentPlanetSpan.textContent = planet.toUpperCase();
+  solarSystem.className = planet;
+}
+
+document.getElementById("prevPlanet").onclick = ()=>{
+  currentIndex = (currentIndex-1+planets.length)%planets.length;
+  updatePlanet();
+};
+document.getElementById("nextPlanet").onclick = ()=>{
+  currentIndex = (currentIndex+1)%planets.length;
+  updatePlanet();
+};
+updatePlanet();
+
+/* no extra JS needed — scripts.min.js sets #universe class to
+   set-speed / set-size / set-distance and our CSS reacts to it */
+
+/* POPUP */
+function openPlanet(planet){
+  selectedPlanet = planet;
+  document.getElementById("optionTitle").innerText = planet.toUpperCase();
+  document.getElementById("planetOptions").classList.add("show");
+}
+function closeOptions(){
+  document.getElementById("planetOptions").classList.remove("show");
+}
+function showPlanetInfo(){
+  window.open(selectedPlanet + "_info.html","_blank");
+}
+function goToVideo(){
+  window.open(selectedPlanet + ".html","_blank");
+}
+</script>
+
+
+</body>
+</html>

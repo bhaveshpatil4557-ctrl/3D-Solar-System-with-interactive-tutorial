@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Solar System</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:"Segoe UI",sans-serif;
+}
+
+body{
+height:100vh;
+background: radial-gradient(circle at top,#05004e,#000000 60%);
+overflow:hidden;
+display:flex;
+justify-content:center;
+align-items:center;
+color:white;
+}
+
+/* Background glow */
+body::before{
+content:"";
+position:absolute;
+width:120%;
+height:120%;
+background: radial-gradient(circle,rgba(0,255,255,0.15),transparent 60%);
+animation:pulse 6s infinite alternate;
+}
+
+@keyframes pulse{
+from{transform:scale(1);opacity:0.5;}
+to{transform:scale(1.1);opacity:0.8;}
+}
+
+/* Stars */
+.star{
+position:absolute;
+width:2px;
+height:2px;
+background:white;
+animation:twinkle 3s infinite alternate;
+}
+
+@keyframes twinkle{
+from{opacity:0.3;}
+to{opacity:1;}
+}
+
+/* Main box */
+.container{
+position:relative;
+z-index:10;
+background:rgba(0,0,0,0.65);
+padding:50px 70px;
+border-radius:20px;
+text-align:center;
+box-shadow:0 0 40px cyan;
+animation:fadeIn 2s ease;
+}
+
+@keyframes fadeIn{
+from{opacity:0;transform:scale(0.8);}
+to{opacity:1;transform:scale(1);}
+}
+
+h1{
+font-size:48px;
+color:cyan;
+text-shadow:0 0 25px cyan;
+animation:glow 2s infinite alternate;
+}
+
+@keyframes glow{
+from{text-shadow:0 0 10px cyan;}
+to{text-shadow:0 0 30px cyan;}
+}
+
+p{
+font-size:18px;
+margin:10px 0;
+opacity:0.9;
+}
+
+/* Button */
+button{
+margin-top:25px;
+padding:14px 35px;
+font-size:18px;
+border:none;
+border-radius:30px;
+background:linear-gradient(45deg,cyan,lime);
+cursor:pointer;
+transition:0.3s;
+box-shadow:0 0 20px cyan;
+}
+
+button:hover{
+transform:scale(1.1);
+box-shadow:0 0 35px lime;
+}
+
+/* PLANETS */
+.planet{
+position:absolute;
+border-radius:50%;
+animation:float 6s infinite ease-in-out,spin 12s linear infinite;
+box-shadow:inset -10px -10px 20px rgba(0,0,0,0.7),
+0 0 25px rgba(0,255,255,0.6);
+}
+
+.planet.one{
+width:80px;
+height:80px;
+background:radial-gradient(circle at 30% 30%,#ffdd00,#ff7b00);
+top:15%;
+left:10%;
+}
+
+.planet.two{
+width:60px;
+height:60px;
+background:radial-gradient(circle at 30% 30%,#6ec6ff,#004e92);
+top:70%;
+left:80%;
+}
+
+.planet.three{
+width:50px;
+height:50px;
+background:radial-gradient(circle at 30% 30%,#ff6b6b,#7f0000);
+top:40%;
+left:85%;
+}
+
+@keyframes float{
+0%{transform:translateY(0)}
+50%{transform:translateY(-25px)}
+100%{transform:translateY(0)}
+}
+
+@keyframes spin{
+from{transform:rotate(0)}
+to{transform:rotate(360deg)}
+}
+
+/* 🤖 BOT ICON */
+#botIcon{
+position:fixed;
+bottom:25px;
+right:25px;
+font-size:32px;
+background:cyan;
+color:black;
+padding:10px;
+border-radius:50%;
+cursor:pointer;
+box-shadow:0 0 20px cyan;
+z-index:1000;
+}
+
+/* CHAT BOX */
+#botBox{
+position:fixed;
+bottom:90px;
+right:20px;
+width:260px;
+background:#021018;
+color:white;
+border-radius:10px;
+padding:12px;
+display:none;
+box-shadow:0 0 20px cyan;
+z-index:1000;
+}
+
+#botHeader{
+font-weight:bold;
+margin-bottom:6px;
+color:cyan;
+}
+
+#botButtons button{
+margin:4px;
+padding:6px;
+font-size:12px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Floating planets -->
+<div class="planet one"></div>
+<div class="planet two"></div>
+<div class="planet three"></div>
+
+<div class="container">
+<h1>🌞 3D Solar System </h1>
+<p>Interactive Simulation of the Solar System</p>
+<p>with planets info and videos </p>
+<p><b>please click the button to enter the system</b></p>
+
+<button onclick="startProject()">Start Simulation 🚀</button>
+</div>
+
+<!-- BOT -->
+<div id="botIcon">🤖</div>
+
+<div id="botBox">
+
+<div id="botHeader">Solar Guide Bot</div>
+
+<div id="botChat">
+<p><b>Bot:</b> Hello Explorer 👋</p>
+<p><b>Bot:</b> Welcome to the Solar System Simulation.</p>
+</div>
+
+<div id="botButtons">
+<button onclick="botReply('project')">About</button>
+<button onclick="botReply('use')">How to Use</button>
+<button onclick="botReply('planets')">Planets</button>
+</div>
+
+</div>
+
+<script>
+
+function startProject(){
+window.location.href="index.html";
+}
+
+/* Stars */
+for(let i=0;i<150;i++){
+let star=document.createElement("div");
+star.className="star";
+star.style.top=Math.random()*100+"vh";
+star.style.left=Math.random()*100+"vw";
+document.body.appendChild(star);
+}
+
+/* BOT */
+const botIcon=document.getElementById("botIcon");
+const botBox=document.getElementById("botBox");
+const botChat=document.getElementById("botChat");
+
+botIcon.onclick=function(){
+botBox.style.display=
+botBox.style.display==="block"?"none":"block";
+};
+
+function botReply(type){
+
+let reply="";
+
+if(type=="project"){
+reply="This project shows a 3D simulation of the Solar System with interactive planets.";
+}
+
+if(type=="use"){
+reply="Click Start Simulation, then select planets to view their information and videos.";
+}
+
+if(type=="planets"){
+reply="You can explore Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus and Neptune.";
+}
+
+botChat.innerHTML+="<p><b>Bot:</b> "+reply+"</p>";
+}
+
+</script>
+
+</body>
+</html>
